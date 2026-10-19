@@ -1,5 +1,6 @@
-/* Morning Edition, public copy: contents sheet, source cards, reading progress.
-   No saves, votes, downloads or API calls: this file ships to the public site. */
+/* Morning Edition, public copy: contents sheet, source cards, reading progress, and the
+   installable/offline part (service worker sw.js keeps every issue on the device).
+   No saves, votes or API calls: this file ships to the public site. */
 (() => {
   "use strict";
   const $ = (s, el = document) => el.querySelector(s);
@@ -79,7 +80,95 @@
     }, ids.length > 1 ? "Sources" : "Source");
   }
 
+  // ---- offline: keep every issue on the device, stay on the newest version -------------
+  const KEY = (k) => "me-pub-" + k;
+  function ago(t) {
+    const m = Math.round((Date.now() - t) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return m + " min ago";
+    const h = Math.round(m / 60);
+    return h < 24 ? h + " h ago" : Math.round(h / 24) + " d ago";
+  }
+  async function syncLine() {
+    const line = $("#sync-line"), rows = $$(".issue-row[data-date]");
+    if (!line || !rows.length || !("caches" in window)) return;
+    let n = 0;
+    for (const r of rows) if (await caches.has("me-pub-issue-" + r.dataset.date)) n++;
+    let when = "";
+    try { const t = Number(localStorage.getItem(KEY("synced")) || 0); if (t) when = " Checked " + ago(t) + "."; } catch (_) {}
+    line.textContent = n >= rows.length
+      ? (rows.length === 1 ? "This issue is" : `All ${rows.length} issues are`) + " saved on this device and read offline." + when
+      : `${n} of ${rows.length} issues saved on this device; the rest download in the background.`;
+    line.hidden = false;
+    if (installEvt && !$(".install-btn", line)) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "install-btn"; b.textContent = "Install the app";
+      b.addEventListener("click", async () => { installEvt.prompt(); installEvt = null; b.remove(); });
+      line.append(" ", b);
+    }
+  }
+  let installEvt = null;
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; syncLine(); });
+
+  function initOffline() {
+    if (!("serviceWorker" in navigator)) return;
+    const sw = navigator.serviceWorker, root = document.body.dataset.root || "./";
+    const hadController = !!sw.controller;
+    let reg = null, lastCheck = 0, reloading = false;
+    function reloadNow() {
+      if (reloading) return;
+      reloading = true;
+      try { sessionStorage.setItem(KEY("scroll"), JSON.stringify({ p: location.pathname, y: scrollY })); } catch (_) {}
+      location.reload();
+    }
+    try {
+      const s = JSON.parse(sessionStorage.getItem(KEY("scroll")) || "null");
+      sessionStorage.removeItem(KEY("scroll"));
+      if (s && s.p === location.pathname) requestAnimationFrame(() => scrollTo(0, s.y));
+    } catch (_) {}
+    sw.addEventListener("controllerchange", () => {
+      if (!hadController) return;
+      if (document.hidden || $("#sheet")?.hidden !== false) reloadNow();
+      else document.addEventListener("visibilitychange", () => { if (document.hidden) reloadNow(); }, { once: true });
+    });
+    sw.addEventListener("message", (e) => {
+      if (!e.data || e.data.type !== "issues-synced") return;
+      try { localStorage.setItem(KEY("synced"), String(Date.now())); } catch (_) {}
+      const rows = $$(".issue-row[data-date]");
+      if (rows.length && e.data.latest && !rows.some((r) => r.dataset.date === e.data.latest)) {
+        let seen = null;
+        try { seen = sessionStorage.getItem(KEY("latest")); sessionStorage.setItem(KEY("latest"), e.data.latest); } catch (_) {}
+        if (seen !== e.data.latest) { reloadNow(); return; }
+      }
+      syncLine();
+    });
+    function check(force) {
+      if (!reg || navigator.onLine === false) return;
+      if (!force && Date.now() - lastCheck < 120000) return;
+      lastCheck = Date.now();
+      reg.update().catch(() => {});
+      (reg.active || sw.controller)?.postMessage({ type: "sync-issues" });
+    }
+    sw.register(root + "sw.js", { scope: root }).then(async (r) => {
+      reg = r;
+      await sw.ready;
+      if (navigator.onLine === false) { try { await r.sync?.register("me-pub-issues"); } catch (_) {} }
+      else check(true);
+      try {
+        if (r.periodicSync) {
+          const st = await navigator.permissions.query({ name: "periodic-background-sync" });
+          if (st.state === "granted") await r.periodicSync.register("me-pub-issues", { minInterval: 6 * 3600 * 1000 });
+        }
+      } catch (_) {}
+    }).catch(() => {});
+    addEventListener("online", () => check(true));
+    addEventListener("offline", () => { try { reg?.sync?.register("me-pub-issues"); } catch (_) {} });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) check(false); });
+    syncLine();
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    initOffline();
     const art = $("#issue");
     $$("#sheet [data-close]").forEach((el) => el.addEventListener("click", closeSheet));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });

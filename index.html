@@ -9,10 +9,13 @@
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f8f8f6" media="(prefers-color-scheme: light)">
 <link rel="icon" href="static/icons/icon-192.png" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="static/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="static/app.css">
 <script src="static/public.js" defer></script>
 </head>
-<body class="page-index public">
+<body class="page-index public" data-root="">
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar" id="bar">
   <div class="bar-inner">
@@ -26,7 +29,7 @@
 
 
   
-  <article class="latest issue-row">
+  <article class="latest issue-row" data-date="2026-10-19">
     <a class="latest-link" href="issue/2026-10-19/">
       <p class="dm-date"><time datetime="2026-10-19"><span class="dm-day">19</span><span class="dm-side"><span>Mon</span><span>Oct</span></span></time></p>
       <h1 class="latest-title">A 929M-edge PubMed graph built with zero LLM calls; also: agent harnesses, Stanford&#39;s Next-Concept Modeling, MegaRAG and Google&#39;s OKF</h1>
@@ -38,6 +41,7 @@
     </div>
   </article>
   
+  <p class="sync-line" id="sync-line" aria-live="polite" hidden></p>
 
 
 <p class="colophon">Written each morning by Claude from one reader's newsletters and saved links, then checked against the web. Every story links the sources it rests on.</p>

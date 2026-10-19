@@ -8,7 +8,7 @@
      Periodic Background Sync while the app is closed (installed app only);
    - pages network first with a short wait, then the cached copy. */
 // publish.py replaces these two lines on export.
-const SHELL = "me-pub-shell-8ac783ad3e38";
+const SHELL = "me-pub-shell-818c02d12e52";
 const SHELL_PATHS = ["./", "manifest.webmanifest", "static/app.css", "static/public.js", "static/fonts/doto.woff2", "static/fonts/geist.woff2", "static/fonts/literata-italic.woff2", "static/fonts/literata.woff2", "static/icons/mark.svg", "static/icons/icon-192.png", "static/icons/icon-512.png"];
 const NET_WAIT_MS = 2500;
 const KEEP_ISSUES = 365;
@@ -103,11 +103,19 @@ async function networkFirst(e, req, key, cacheName) {
 }
 
 async function staleWhileRevalidate(e, req) {
+  // Pages ask for static/app.css?v=<content hash>: a new deploy is a cache miss, so new HTML
+  // never gets old CSS/JS. The unversioned precached copies are only the offline fallback.
   const c = await caches.open(SHELL);
-  const hit = await c.match(req, { ignoreSearch: true });
+  const versioned = new URL(req.url).searchParams.has("v");
+  const hit = await c.match(req, { ignoreSearch: !versioned });
   const fresh = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; });
   if (hit) { e.waitUntil(fresh.then(() => {}, () => {})); return hit; }
-  return fresh;
+  try { return await fresh; }
+  catch (err) {
+    const any = await caches.match(req, { ignoreSearch: true });
+    if (any) return any;
+    throw err;
+  }
 }
 
 self.addEventListener("fetch", (e) => {

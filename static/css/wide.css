@@ -1,0 +1,43 @@
+/* Larger screens, the public copy, and small late fixes. */
+
+/* --- larger screens --------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .tabbar { display: none; }
+  .tabs { display: flex; }
+  body:has(.tabbar) .wrap { padding-bottom: 64px; }
+  body:has(.tabbar) .toast { bottom: 24px; }
+  .taste-foot { bottom: 0; }
+  .wrap { padding-top: 36px; }
+  .dm-date { font-size: 7rem; }
+  .latest-title { font-size: 2.3rem; }
+  .issue { font-size: 1.25rem; line-height: 1.6; }
+  .issue h1 { font-size: 2.45rem; }
+  .issue h2 { font-size: 1.5rem; }
+  .issue h3 { font-size: 1.45rem; }
+  .page-title { font-size: 2.5rem; }
+  .bar.tucked { transform: none; }
+}
+@media (min-width: 1200px) {
+  .page-issue .wrap { max-width: calc(var(--measure) + 2 * 260px + 2 * var(--gutter)); }
+  .page-issue .bar-inner { max-width: calc(var(--measure) + 2 * 260px + 2 * var(--gutter)); }
+  .issue-layout { display: grid; grid-template-columns: 200px var(--measure) 200px;
+                  column-gap: 60px; justify-content: center; }
+  .rail { display: block; position: sticky; top: calc(var(--bar-h) + 28px); align-self: start;
+          max-height: calc(100vh - var(--bar-h) - 48px); overflow-y: auto; scrollbar-width: thin; }
+  .page-issue .toc-btn { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto !important; }
+}
+
+/* public copy */
+.colophon { font: .8rem/1.5 var(--sans); color: var(--ink-3); margin: 56px 0 0; padding-top: 16px;
+            border-top: 1px solid var(--rule); max-width: 60ch; }
+.public .wrap { padding-bottom: 48px; }
+
+.dl-part { white-space: nowrap; }
+.dateline { flex-wrap: wrap; row-gap: 2px; } .dateline time { white-space: nowrap; }
+.sheet .sheet-top { cursor: grab; touch-action: none; min-height: 48px; }

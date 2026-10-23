@@ -8,7 +8,7 @@
      Periodic Background Sync while the app is closed (installed app only);
    - pages network first with a short wait, then the cached copy. */
 // publish.py replaces these two lines on export.
-const SHELL = "me-pub-shell-4eafa15a6d80";
+const SHELL = "me-pub-shell-ee3a07e7459e";
 const SHELL_PATHS = ["./", "manifest.webmanifest", "static/css/base.css", "static/css/issue.css", "static/css/sheet.css", "static/css/pages.css", "static/css/wide.css", "static/public.js", "static/fonts/doto.woff2", "static/fonts/geist.woff2", "static/fonts/literata-italic.woff2", "static/fonts/literata.woff2", "static/icons/mark.svg", "static/icons/icon-192.png", "static/icons/icon-512.png"];
 const NET_WAIT_MS = 2500;
 const KEEP_ISSUES = 365;
